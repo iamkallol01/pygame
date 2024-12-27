@@ -3,17 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Control</title>
+    <title>Catch the Falling Objects</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #fff;
+        }
+        canvas {
+            border: 2px solid black;
         }
     </style>
 </head>
 <body>
-    <h1>Game is Running</h1>
-    <p id="status">The game has started. Enjoy!</p>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Game variables
+        const WIDTH = 800, HEIGHT = 600;
+        const bucketWidth = 80, bucketHeight = 40;
+        let playerX = WIDTH / 2 - bucketWidth / 2, playerY = HEIGHT - bucketHeight - 10;
+        let playerSpeed = 7, score = 0, lives = 0;
+        let paused = false;
+
+        const objects = [];
+        const bombs = [];
+        let greenLollipop = null;
+        let recallCard = null;
+        let lastGreenLollipopSpawn = Date.now();
+        let lastRecallCardSpawn = Date.now();
+
+        // Colors
+        const WHITE = "#FFFFFF", RED = "#FF0000", GREEN = "#00FF00", BLACK = "#000000", BROWN = "#8B4513", ORANGE = "#FFA500", YELLOW = "#FFFF00";
+        const GRAY = "#808080";
+
+        // Load sound effects (browser-based audio handling)
+        const collectLollipopSound = new Audio('/static/sounds/90s-game-ui-6-185099.mp3');
+        const collectGreenLollipopSound = new Audio('/static/sounds/game-bonus-144751.mp3');
+        const bombExplodeSound = new Audio('/static/sounds/game-over-31-179699.mp3');
+        const gameOverSound = new Audio('/static/sounds/game-over-31-179699.mp3');
+        const recallCardSound = new Audio('/static/sounds/game-bonus-144751.mp3');
+
+        // Game loop function
+        function gameLoop() {
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+            
+            if (paused) {
+                showPauseScreen();
+                return;
+            }
+
+            handlePlayerMovement();
+            spawnObjectsAndBombs();
+            updateObjectPositions();
+            drawObjects();
+            checkCollisions();
+
+            drawScore();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function handlePlayerMovement() {
+            if (keys.left && playerX > 0) playerX -= playerSpeed;
+            if (keys.right && playerX < WIDTH - bucketWidth) playerX += playerSpeed;
+            if (keys.up && playerY > 0) playerY -= playerSpeed;
+            if (keys.down && playerY < HEIGHT - bucketHeight) playerY += playerSpeed;
+        }
+
+        function spawnObjectsAndBombs() {
+            if (Math.random() < 0.03) spawnObject();
+            if (Math.random() < 0.02) spawnBomb();
+            
+            const currentTime = Date.now();
+            if (currentTime - lastGreenLollipopSpawn >= 10000) {
+                spawnGreenLollipop();
+                lastGreenLollipopSpawn = currentTime;
+            }
+
+            if (currentTime - lastRecallCardSpawn >= 20000) {
+                spawnRecallCard();
+                lastRecallCardSpawn = currentTime;
+            }
+        }
+
+        function updateObjectPositions() {
+            objects.forEach(obj => obj.y += 5);
+            bombs.forEach(bomb => bomb.y += 6);
+            if (greenLollipop) greenLollipop.y += 5;
+            if (recallCard) recallCard.y += 5;
+        }
+
+        function drawObjects() {
+            drawBucket();
+            objects.forEach(drawObject);
+            bombs.forEach(drawBomb);
+            if (greenLollipop) drawGreenLollipop();
+            if (recallCard) drawRecallCard();
+        }
+
+        function drawBucket() {
+            ctx.fillStyle = GRAY;
+            ctx.fillRect(playerX, playerY, bucketWidth, bucketHeight);
+        }
+
+        function drawObject(obj) {
+            ctx.fillStyle = BROWN;
+            ctx.fillRect(obj.x + 12, obj.y + 10, 4, 20); // Stick
+            ctx.beginPath();
+            ctx.arc(obj.x + 15, obj.y + 20, 15, 0, Math.PI * 2); // Candy
+            ctx.fillStyle = RED;
+            ctx.fill();
+        }
+
+        function drawBomb(bomb) {
+            ctx.fillStyle = BLACK;
+            ctx.beginPath();
+            ctx.arc(bomb.x + 15, bomb.y + 15, 15, 0, Math.PI * 2); // Bomb
+            ctx.fill();
+            ctx.fillStyle = ORANGE;
+            ctx.fillRect(bomb.x + 13, bomb.y - 5, 4, 10); // Fuse
+        }
+
+        function drawGreenLollipop() {
+            ctx.fillStyle = BROWN;
+            ctx.fillRect(greenLollipop.x + 12, greenLollipop.y + 10, 4, 20); // Stick
+            ctx.beginPath();
+            ctx.arc(greenLollipop.x + 15, greenLollipop.y + 20, 15, 0, Math.PI * 2); // Green Candy
+            ctx.fillStyle = GREEN;
+            ctx.fill();
+        }
+
+        function drawRecallCard() {
+            ctx.fillStyle = YELLOW;
+            ctx.fillRect(recallCard.x, recallCard.y, 30, 30); // Recall Card
+        }
+
+        function drawScore() {
+            ctx.fillStyle = BLACK;
+            ctx.font = "36px Arial";
+            ctx.fillText("Score: " + score, 10, 40);
+            ctx.fillText("Lives: " + lives, WIDTH - 150, 40);
+        }
+
+        function showPauseScreen() {
+            ctx.fillStyle = BLACK;
+            ctx.fillRect(WIDTH / 2 - 150, HEIGHT / 2 - 50, 300, 100);
+            ctx.fillStyle = WHITE;
+            ctx.font = "24px Arial";
+            ctx.fillText("Game Paused", WIDTH / 2 - 75, HEIGHT / 2 - 20);
+            ctx.fillText("Press 'Space' to Resume", WIDTH / 2 - 95, HEIGHT / 2 + 20);
+        }
+
+        function spawnObject() {
+            let x = Math.random() * (WIDTH - 30);
+            let y = -30;
+            objects.push({ x, y });
+        }
+
+        function spawnBomb() {
+            let x = Math.random() * (WIDTH - 30);
+            let y = -30;
+            bombs.push({ x, y });
+        }
+
+        function spawnGreenLollipop() {
+            greenLollipop = { x: Math.random() * (WIDTH - 30), y: -30 };
+        }
+
+        function spawnRecallCard() {
+            recallCard = { x: Math.random() * (WIDTH - 30), y: -30 };
+        }
+
+        function checkCollisions() {
+            // Player vs Objects
+            objects.forEach((obj, index) => {
+                if (playerX < obj.x + 30 && playerX + bucketWidth > obj.x && playerY < obj.y + 30 && playerY + bucketHeight > obj.y) {
+                    objects.splice(index, 1);
+                    score++;
+                    collectLollipopSound.play();
+                }
+            });
+
+            // Player vs Green Lollipop
+            if (greenLollipop && playerX < greenLollipop.x + 30 && playerX + bucketWidth > greenLollipop.x && playerY < greenLollipop.y + 30 && playerY + bucketHeight > greenLollipop.y) {
+                greenLollipop = null;
+                score += 5;
+                collectGreenLollipopSound.play();
+            }
+
+            // Player vs Bomb
+            bombs.forEach((bomb, index) => {
+                if (playerX < bomb.x + 30 && playerX + bucketWidth > bomb.x && playerY < bomb.y + 30 && playerY + bucketHeight > bomb.y) {
+                    bombs.splice(index, 1);
+                    lives--;
+                    bombExplodeSound.play();
+                }
+            });
+
+            // Player vs Recall Card
+            if (recallCard && playerX < recallCard.x + 30 && playerX + bucketWidth > recallCard.x && playerY < recallCard.y + 30 && playerY + bucketHeight > recallCard.y) {
+                recallCard = null;
+                score = 0;
+                lives = 3;
+                recallCardSound.play();
+            }
+        }
+
+        // Event listener for key presses
+        const keys = { left: false, right: false, up: false, down: false };
+        window.addEventListener("keydown", (event) => {
+            if (event.key === "ArrowLeft") keys.left = true;
+            if (event.key === "ArrowRight") keys.right = true;
+            if (event.key === "ArrowUp") keys.up = true;
+            if (event.key === "ArrowDown") keys.down = true;
+            if (event.key === " " && paused) {
+                paused = false;
+            }
+        });
+        window.addEventListener("keyup", (event) => {
+            if (event.key === "ArrowLeft") keys.left = false;
+            if (event.key === "ArrowRight") keys.right = false;
+            if (event.key === "ArrowUp") keys.up = false;
+            if (event.key === "ArrowDown") keys.down = false;
+        });
+
+        // Start the game loop
+        gameLoop();
+    </script>
 </body>
 </html>
+
