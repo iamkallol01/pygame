@@ -1,0 +1,13 @@
+{
+    "version": 2,
+    "functions": {
+      "02update.py": {
+        "runtime": "vercel-python@latest"
+      }
+    },
+    "routes": [
+      { "src": "/(.*)", "dest": "/02update.py" }
+    ]
+  }
+  
+  
