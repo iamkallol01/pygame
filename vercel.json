@@ -1,13 +1,11 @@
 {
     "version": 2,
-    "functions": {
-      "02update.py": {
-        "runtime": "vercel-python@latest"
-      }
-    },
+    "builds": [
+        {"src": "app.py", "use": "@vercel/python"}
+    ],
     "routes": [
-      { "src": "/(.*)", "dest": "/02update.py" }
+        {"src": "/(.*)", "dest": "app.py"}
     ]
-  }
+}
   
   
