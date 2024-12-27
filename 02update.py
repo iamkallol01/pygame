@@ -87,7 +87,11 @@ collect_green_lollipop_sound.set_volume(0.5)
 bomb_explode_sound.set_volume(0.2)
 game_over_sound.set_volume(1.0)
 recall_card_sound.set_volume(0.5)
-
+def handler(request):
+    return {
+        "statusCode": 200,
+        "body": "Hello from Vercel!"
+    }
 # Spawn objects randomly
 def spawn_object():
     x = random.randint(0, WIDTH - object_width)
