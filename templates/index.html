@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Control Your Game</h1>
+    <button id="startGame">Start Game</button>
+    <button id="stopGame">Stop Game</button>
+    <p id="status"></p>
+
+    <script>
+        document.getElementById("startGame").addEventListener("click", () => {
+            fetch("/start_game", { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("status").innerText = data.status;
+                });
+        });
+
+        document.getElementById("stopGame").addEventListener("click", () => {
+            fetch("/stop_game", { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("status").innerText = data.status;
+                });
+        });
+    </script>
+</body>
+</html>
