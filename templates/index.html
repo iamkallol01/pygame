@@ -10,35 +10,10 @@
             text-align: center;
             margin-top: 50px;
         }
-        button {
-            padding: 10px 20px;
-            margin: 10px;
-            font-size: 16px;
-        }
     </style>
 </head>
 <body>
-    <h1>Control Your Game</h1>
-    <button id="startGame">Start Game</button>
-    <button id="stopGame">Stop Game</button>
-    <p id="status"></p>
-
-    <script>
-        document.getElementById("startGame").addEventListener("click", () => {
-            fetch("/start_game", { method: "POST" })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById("status").innerText = data.status;
-                });
-        });
-
-        document.getElementById("stopGame").addEventListener("click", () => {
-            fetch("/stop_game", { method: "POST" })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById("status").innerText = data.status;
-                });
-        });
-    </script>
+    <h1>Game is Running</h1>
+    <p id="status">The game has started. Enjoy!</p>
 </body>
 </html>
